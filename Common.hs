@@ -6,6 +6,7 @@ import Data.List
 import Data.Ratio
 import System.IO
 import qualified Data.IntMap as IM
+import qualified Data.Map as M
 
 fi a = fromInteger a
 
@@ -31,8 +32,14 @@ firstFactorOf p n = let
 		[] -> n
 		h:_ -> h
 
+isSquare :: Integer -> Bool
+isSquare 1 = True
+isSquare n = let ff = firstFactor n
+                 (q,r) = n `divMod` ff
+                 (q',r') = q `divMod` ff
+             in if r' == 0 then isSquare q' else False
+
 -- factorization of a number, in list of primes form
--- if you're feeling randy check that (product (factor n) == n) when n > 0
 factor = factor' primes
 factor' p n
 	| n <= 1 = []
@@ -55,8 +62,16 @@ eulerPhi' (p,k) = p^k - p^(k-1)
 radical = multiplicative radical'
 radical' (p,k) = p
 
+eulerSigma = multiplicative esig'
+esig' (p,k) = (p^(k+1) - 1) `div` (p - 1)
+
+squarefree = multiplicative sf'
+    where sf' (p,k) = if k > 1 then 0 else 1
+
 -- 1, x, x^2, ..., x^k
 k `powersOf` x = map (x^) [0..k]
+
+fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
 
 -- number of Distinct Elements in a list
 -- I think I initially intended this to work only on ascending
@@ -170,6 +185,11 @@ occurrencesOf l = IM.toAscList $ foldr (IM.alter count) IM.empty l
 	where
 		count Nothing = Just 1
 		count (Just n) = Just (n+1)
+
+occurrencesOfM l = M.toAscList $ foldr (M.alter count) M.empty l
+	where
+		count Nothing = Just 1
+		count (Just n) = Just (n+1)
 {-
 foldl1' :: (a -> a -> a) -> [a] -> a
 foldl1' _ [] = undefined
@@ -181,9 +201,32 @@ maxBySnd, minBySnd :: (Ord a) => [(b,a)] -> (b,a)
 maxBySnd = foldl1' (findMost (>))
 minBySnd = foldl1' (findMost (<))
 
+ascBySnd = ascBySnd' 0 (>)
+ascBySnd' _ f [] = []
+ascBySnd' b f ((a,v):vs) = if f v b then (a,v) : ascBySnd' v f vs else ascBySnd' b f vs
+
 findMost :: (a -> a -> Bool) -> (b, a) -> (b, a) -> (b, a)
 findMost f (a,av) (b,bv) = if f av bv then (a,av) else (b,bv)
 
 -- every pythagorean triple, comes very slowly so you can savor them all
 naivePT :: [(Int,Int,Int)]
 naivePT = [(a,b,c) | c <- [1..], a <- [1..c], b <- [1..a], a*a + b*b == c*c]
+
+partList = map partitions [0..]
+
+a !!! b
+    | b <= 0 = 0
+    | otherwise = a !! b
+
+partitions :: Int -> Integer
+partitions n
+    | n <= 0   = 0
+    | n == 1   = 1
+    |otherwise = sum $ map (p' n) [1..n]
+        where p' n k = (-1)^(k+1) *
+                       (partList !!! (n - k*(3*k-1)`div`2) +
+                        partList !!! (n - k*(3*k+1)`div`2))
+
+factorial n = product [2..n]
+choose n k = (factorial n) `div` (factorial k) `div` (factorial (n-k))
+
