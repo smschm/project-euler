@@ -54,7 +54,8 @@ factorization n = map (\x -> (head x, length x)) $ group $ factor n
 multiplicative :: ((Integer, Int) -> Integer) -> Integer -> Integer
 multiplicative f = product . (map f) . factorization
 
--- euler phi function. durp
+-- euler phi function/totient function
+-- number of integers between [1,n] coprime to n
 eulerPhi = multiplicative eulerPhi'
 eulerPhi' (p,k) = p^k - p^(k-1)
 
@@ -62,15 +63,18 @@ eulerPhi' (p,k) = p^k - p^(k-1)
 radical = multiplicative radical'
 radical' (p,k) = p
 
+-- sum of the divisors of a number (including itself)
+-- e.g. sigma(n) = 2n for perfect numbers
 eulerSigma = multiplicative esig'
 esig' (p,k) = (p^(k+1) - 1) `div` (p - 1)
 
 squarefree = multiplicative sf'
     where sf' (p,k) = if k > 1 then 0 else 1
 
--- 1, x, x^2, ..., x^k
+-- [1, x, x^2, ..., x^k]
 k `powersOf` x = map (x^) [0..k]
 
+-- look, a haskell tutorial
 fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
 
 -- number of Distinct Elements in a list
@@ -88,11 +92,10 @@ numDPF n = ascDE $ factor n -- distinct prime factors
 
 -- Partial Fraction Decomposition
 -- will be wrong after a few terms for doubles and run into
--- an exception on ratios, so watch your shit son
+-- an exception on ratios.
 --pfd :: (Frac a, Integral b) => a -> [b]
 pfd x = let n = floor x in n : pfd (1/(x - (fromIntegral n)))
 
--- I cannot for the life of me remember how this works, but:
 -- a Surd (a,b,c) represents a+b*sqrt(c), and surdPfd gives you
 -- the PFD of that number without losing precision like pfd above
 type Surd = (Ratio Integer, Ratio Integer, Integer)
@@ -100,6 +103,7 @@ surdPfd x@(a,b,c) = let n = floor (surdToReal x) in n : surdPfd (surdRecip (x `s
 surdCycle x@(a,b,c) = let n = floor (surdToReal x) in x : surdCycle (surdRecip (x `ssi` n))
 cycleLength n = 1 + lengthToRepeat (tail (surdCycle (0,1,n)))
 
+-- # of elements *between* the first repeated element of a list and the repeat
 lengthToRepeat :: (Eq a) => [a] -> Int
 lengthToRepeat = lengthToRepeat' []
 lengthToRepeat' l (x:xs) = let e = x `elemIndex` l in case e of
@@ -186,21 +190,19 @@ occurrencesOf l = IM.toAscList $ foldr (IM.alter count) IM.empty l
 		count Nothing = Just 1
 		count (Just n) = Just (n+1)
 
+-- same as above, but for any list of Ords
 occurrencesOfM l = M.toAscList $ foldr (M.alter count) M.empty l
 	where
 		count Nothing = Just 1
 		count (Just n) = Just (n+1)
-{-
-foldl1' :: (a -> a -> a) -> [a] -> a
-foldl1' _ [] = undefined
-foldl1' f l = foldl' f (head l) (tail l)
--}
 
 -- max/min of a list of (x,y) by the second part
 maxBySnd, minBySnd :: (Ord a) => [(b,a)] -> (b,a)
 maxBySnd = foldl1' (findMost (>))
 minBySnd = foldl1' (findMost (<))
 
+-- elements (x,y) of a list where the y in begger than any previous y.
+-- useful for interactively watching a program run
 ascBySnd = ascBySnd' 0 (>)
 ascBySnd' _ f [] = []
 ascBySnd' b f ((a,v):vs) = if f v b then (a,v) : ascBySnd' v f vs else ascBySnd' b f vs
@@ -212,6 +214,7 @@ findMost f (a,av) (b,bv) = if f av bv then (a,av) else (b,bv)
 naivePT :: [(Int,Int,Int)]
 naivePT = [(a,b,c) | c <- [1..], a <- [1..c], b <- [1..a], a*a + b*b == c*c]
 
+-- lazy list of partition numbers.  This runs *okay* fast, I guess
 partList = map partitions [0..]
 
 a !!! b
