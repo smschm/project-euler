@@ -8,7 +8,6 @@ fibs9 = 1 : 1 : zipWith (\x y -> (x + y) `mod` 1000000000) fibs9 (tail fibs9)
 
 
 ---------- uuuuuuuuuuuuuuuuuggggggggggggggggggghhhhhhhhhhhh
----------- feel free to shit your pants
 highFibs' :: [(Double, Int)]
 highFibs' = (1,0) : (1,0) : zipWith hf' highFibs' (tail highFibs')
     where hf' (x,e) (y,e') = let v = case (e' - e) of
